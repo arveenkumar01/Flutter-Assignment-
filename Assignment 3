@@ -1,0 +1,85 @@
+import 'dart:math';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: const MoodCounterPage(),
+    );
+  }
+}
+
+class MoodCounterPage extends StatefulWidget {
+  const MoodCounterPage({super.key});
+
+  @override
+  State<MoodCounterPage> createState() => _MoodCounterPageState();
+}
+
+class _MoodCounterPageState extends State<MoodCounterPage> {
+  int counter = 0;
+  double fontSize = 30;
+
+  final List<String> emojis = ["😐", "🙂", "😃", "🤣", "🤩", "😍"];
+  Color bgColor = Colors.white;
+
+  void updateCounter() {
+    setState(() {
+      counter++;
+
+      // Change background color randomly
+      bgColor = Color.fromARGB(
+        255,
+        Random().nextInt(255),
+        Random().nextInt(255),
+        Random().nextInt(255),
+      );
+
+      // Increase font size slightly every tap
+      fontSize += 2;
+      if (fontSize > 60) fontSize = 30; // reset size for fun
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text("Mood Counter using setState()"),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              emojis[counter % emojis.length],
+              style: TextStyle(fontSize: fontSize),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "Count: $counter",
+              style: TextStyle(fontSize: fontSize / 2, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 30),
+
+            // Button
+            ElevatedButton(
+              onPressed: updateCounter,
+              child: const Text("Tap Me!"),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
