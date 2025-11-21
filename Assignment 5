@@ -1,0 +1,391 @@
+
+
+import 'dart:math';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const BMICalculatorApp());
+}
+
+class BMICalculatorApp extends StatelessWidget {
+  const BMICalculatorApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Interactive BMI Calculator',
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+        useMaterial3: true,
+      ),
+      home: const BMIScreen(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class BMIScreen extends StatefulWidget {
+  const BMIScreen({super.key});
+
+  @override
+  State<BMIScreen> createState() => _BMIScreenState();
+}
+
+class _BMIScreenState extends State<BMIScreen>
+    with SingleTickerProviderStateMixin {
+  // Initial values (beginner-friendly ranges)
+  double _heightCm = 170; // height in centimeters
+  double _weightKg = 70; // weight in kilograms
+
+  // Animation controller for small pop effect when BMI updates
+  late AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+      lowerBound: 0.0,
+      upperBound: 0.06,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  // Compute BMI: weight(kg) / (height(m))^2
+  double get _bmi {
+    final heightM = _heightCm / 100.0;
+    if (heightM <= 0) return 0;
+    final bmi = _weightKg / (heightM * heightM);
+    return bmi.isFinite ? bmi : 0;
+  }
+
+  // Round BMI to 1 decimal for display
+  String get _bmiString => _bmi.isFinite ? _bmi.toStringAsFixed(1) : '0.0';
+
+  // Return category label, emoji and colors for UI
+  BMICategory _getCategory(double bmi) {
+    if (bmi < 18.5) {
+      return BMICategory(
+        label: 'Underweight',
+        emoji: '🥺',
+        gradient: const [Color(0xFF9AD0F5), Color(0xFFA1C7F9)],
+      );
+    } else if (bmi < 25.0) {
+      return BMICategory(
+        label: 'Normal',
+        emoji: '😊',
+        gradient: const [Color(0xFFA8E6A3), Color(0xFF78E08F)],
+      );
+    } else if (bmi < 30.0) {
+      return BMICategory(
+        label: 'Overweight',
+        emoji: '😐',
+        gradient: const [Color(0xFFFFE29A), Color(0xFFFFC266)],
+      );
+    } else {
+      return BMICategory(
+        label: 'Obese',
+        emoji: '😟',
+        gradient: const [Color(0xFFFFB3B3), Color(0xFFFF6B6B)],
+      );
+    }
+  }
+
+  // Resets values to default beginner-friendly numbers
+  void _reset() {
+    setState(() {
+      _heightCm = 170;
+      _weightKg = 70;
+      _pulseController.reset();
+    });
+  }
+
+  // Called when slider updates: triggers tiny animation
+  void _onValueChanged(void Function() updater) {
+    updater();
+    // small pulse animation
+    _pulseController.forward(from: 0.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bmiValue = _bmi;
+    final category = _getCategory(bmiValue);
+
+    // Animation scale based on controller value
+    final scale = 1 + _pulseController.value;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Interactive BMI Calculator'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Reset',
+            icon: const Icon(Icons.refresh),
+            onPressed: _reset,
+          )
+        ],
+      ),
+      body: SafeArea(
+        minimum: const EdgeInsets.all(14.0),
+        child: Column(
+          children: [
+            // Top area: sliders and selected values
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Set your height',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Show height value in cm and meters
+                        Text(
+                          '${_heightCm.toStringAsFixed(0)} cm • ${( (_heightCm / 100)).toStringAsFixed(2)} m',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        // Mini hint
+                        const Text(
+                          'Use slider',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      min: 100,
+                      max: 220,
+                      divisions: 120,
+                      value: _heightCm,
+                      label: '${_heightCm.toStringAsFixed(0)} cm',
+                      onChanged: (v) {
+                        _onValueChanged(() => setState(() => _heightCm = v));
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Set your weight',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${_weightKg.toStringAsFixed(1)} kg',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const Text(
+                          'Use slider',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      min: 30,
+                      max: 160,
+                      divisions: 130,
+                      value: _weightKg,
+                      label: '${_weightKg.toStringAsFixed(1)} kg',
+                      onChanged: (v) {
+                        _onValueChanged(() => setState(() => _weightKg = (v)));
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    // Simple quick input fields (optional) for advanced users
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            // small step -1 kg
+                            _onValueChanged(
+                                () => setState(() => _weightKg = max(30, _weightKg - 1)));
+                          },
+                          icon: const Icon(Icons.remove),
+                          label: const Text('-1 kg'),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            // small step +1 kg
+                            _onValueChanged(
+                                () => setState(() => _weightKg = min(160, _weightKg + 1)));
+                          },
+                          icon: const Icon(Icons.add),
+                          label: const Text('+1 kg'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            // Animated result container
+            Expanded(
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: 1.0 + _pulseController.value,
+                      child: child,
+                    );
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.all(20),
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: category.gradient,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          offset: Offset(0, 8),
+                          blurRadius: 20,
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Your BMI',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // BMI number
+                        Text(
+                          _bmiString,
+                          style: const TextStyle(
+                            fontSize: 56,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Category + emoji
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              category.emoji,
+                              style: const TextStyle(fontSize: 28),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              category.label,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Small explanation text
+                        Text(
+                          _bmiExplanation(bmiValue),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        // Optional: recommended healthy weight range for the height
+                        Text(
+                          _recommendedWeightRange(_heightCm),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // Small footer / tips
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6.0),
+              child: Text(
+                'Tip: BMI is a simple screening tool. For personalised health advice, consult a professional.',
+                style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Explanation text depending on BMI
+  String _bmiExplanation(double bmi) {
+    if (bmi <= 0) return 'Move sliders to calculate your BMI.';
+    if (bmi < 18.5) return 'Below the normal range. Consider a balanced diet to gain healthy weight.';
+    if (bmi < 25) return 'Within the normal healthy range — great!';
+    if (bmi < 30) return 'Above the normal range. Consider activity and balanced diet.';
+    return 'Consider consulting a healthcare provider for personalised guidance.';
+  }
+
+  // Returns recommended weight range (kg) for given height using BMI 18.5 - 24.9
+  String _recommendedWeightRange(double heightCm) {
+    final h = heightCm / 100.0;
+    final minW = 18.5 * h * h;
+    final maxW = 24.9 * h * h;
+    return 'Healthy weight range: ${minW.toStringAsFixed(1)} kg - ${maxW.toStringAsFixed(1)} kg';
+  }
+}
+
+// Small helper class for category
+class BMICategory {
+  final String label;
+  final String emoji;
+  final List<Color> gradient;
+  BMICategory({
+    required this.label,
+    required this.emoji,
+    required this.gradient,
+  });
+}
