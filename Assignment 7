@@ -1,0 +1,169 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart';
+
+void main() {
+  runApp(const PokeApp());
+}
+
+class PokeApp extends StatelessWidget {
+  const PokeApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Poképedia',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.red),
+      home: const LoginScreen(),
+    );
+  }
+}
+
+/* ---------------- LOGIN SCREEN ---------------- */
+
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    TextEditingController nameController = TextEditingController();
+
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // LOTTIE FROM INTERNET (NO ASSETS)
+              Lottie.network(
+                'https://assets7.lottiefiles.com/packages/lf20_j1adxtyb.json',
+                height: 200,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Welcome to Poképedia",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: "Enter your name",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HomeScreen(
+                        username: nameController.text.isEmpty
+                            ? "Trainer"
+                            : nameController.text,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text("Login"),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ---------------- HOME SCREEN ---------------- */
+
+class HomeScreen extends StatefulWidget {
+  final String username;
+  const HomeScreen({super.key, required this.username});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List pokemonList = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPokemon();
+  }
+
+  Future<void> fetchPokemon() async {
+    final url =
+        Uri.parse('https://pokeapi.co/api/v2/pokemon?limit=30');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      setState(() {
+        pokemonList = json.decode(response.body)['results'];
+        loading = false;
+      });
+    }
+  }
+
+  String getPokemonImage(int index) {
+    return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${index + 1}.png';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Hello ${widget.username} 👋"),
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : GridView.builder(
+              padding: const EdgeInsets.all(10),
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.85,
+              ),
+              itemCount: pokemonList.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.network(
+                        getPokemonImage(index),
+                        height: 80,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        pokemonList[index]['name']
+                            .toString()
+                            .toUpperCase(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
