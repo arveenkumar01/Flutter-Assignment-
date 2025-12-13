@@ -11,51 +11,48 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'To-Do App',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-      ),
-      home: const SplashScreen(),
+      title: 'To-Do App',
+      theme: ThemeData(primarySwatch: Colors.deepPurple),
+      home: const WelcomeScreen(),
     );
   }
 }
 
 /// --------------------
-/// SPLASH SCREEN
+/// SCREEN 1: WELCOME
 /// --------------------
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    });
-  }
+class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.deepPurple,
-      body: const Center(
-        child: Text(
-          "To-Do App",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-          ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              "To-Do App",
+              style: TextStyle(
+                fontSize: 32,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const HomeScreen()),
+                );
+              },
+              child: const Text("Enter App"),
+            ),
+          ],
         ),
       ),
     );
@@ -63,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen> {
 }
 
 /// --------------------
-/// HOME SCREEN
+/// SCREEN 2: HOME
 /// --------------------
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -90,23 +87,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Tasks"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("My Tasks")),
       body: tasks.isEmpty
-          ? const Center(
-              child: Text(
-                "No tasks added yet!",
-                style: TextStyle(fontSize: 18),
-              ),
-            )
+          ? const Center(child: Text("No tasks added"))
           : ListView.builder(
               itemCount: tasks.length,
               itemBuilder: (context, index) {
                 return Card(
-                  margin: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
                   child: ListTile(
                     title: Text(tasks[index]),
                     trailing: IconButton(
@@ -118,26 +105,25 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
       floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
         onPressed: () async {
-          final newTask = await Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const AddTaskScreen(),
-            ),
+                builder: (context) => const AddTaskScreen()),
           );
 
-          if (newTask != null) {
-            addTask(newTask);
+          if (result != null) {
+            addTask(result);
           }
         },
-        child: const Icon(Icons.add),
       ),
     );
   }
 }
 
 /// --------------------
-/// ADD TASK SCREEN
+/// SCREEN 3: ADD TASK
 /// --------------------
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -147,26 +133,18 @@ class AddTaskScreen extends StatefulWidget {
 }
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
-  final TextEditingController _controller = TextEditingController();
-
-  void submitTask() {
-    if (_controller.text.isNotEmpty) {
-      Navigator.pop(context, _controller.text);
-    }
-  }
+  final TextEditingController controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Add Task"),
-      ),
+      appBar: AppBar(title: const Text("Add Task")),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
-              controller: _controller,
+              controller: controller,
               decoration: const InputDecoration(
                 labelText: "Task Name",
                 border: OutlineInputBorder(),
@@ -174,8 +152,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: submitTask,
-              child: const Text("Add Task"),
+              onPressed: () {
+                if (controller.text.isNotEmpty) {
+                  Navigator.pop(context, controller.text);
+                }
+              },
+              child: const Text("Save Task"),
             ),
           ],
         ),
